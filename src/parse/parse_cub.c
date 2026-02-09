@@ -6,15 +6,23 @@
 /*   By: marcheva <marcheva@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/02 11:01:57 by marcheva          #+#    #+#             */
-/*   Updated: 2026/02/03 16:07:56 by marcheva         ###   ########.fr       */
+/*   Updated: 2026/02/05 15:39:21 by marcheva         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "cub3d.h"
 
-int	all_elements_parsed(t_map *map)
+int	handle_map_start(t_map *map, char *line)
 {
-	return (map->north && map->south && map->east && map->west);
+	if (!all_elements_parsed(map))
+	{
+		printf("Error\nMissing elements before map\n");
+		free(line);
+		return (0);
+	}
+	map->first_line = ft_strdup(line);
+	free(line);
+	return (1);
 }
 
 int	parse_elements(t_map *map, int fd)
@@ -31,17 +39,7 @@ int	parse_elements(t_map *map, int fd)
 			continue ;
 		}
 		if (is_map_line(line))
-		{
-			if (!all_elements_parsed(map))
-			{
-				printf("Error\nMissing elements before map\n");
-				free(line);
-				return (0);
-			}
-			map->first_line = ft_strdup(line);
-			free(line);
-			return (1);
-		}
+			return (handle_map_start(map, line));
 		if (!parse_element_line(map, line))
 		{
 			free(line);
@@ -79,11 +77,37 @@ int	parse_cub(t_map *map, char *file)
 	return (1);
 }
 
-int	parse_map(t_map *map, int fd)
+char	**read_map_loop(char **tmp, int *count, int fd)
 {
 	char	*line;
-	int		count;
+
+	line = get_next_line(fd);
+	while (line)
+	{
+		if (line[0] == '\n' && *count == 0)
+		{
+			free(line);
+			line = get_next_line(fd);
+			continue ;
+		}
+		tmp = add_line(tmp, line, *count);
+		if (!tmp)
+		{
+			printf("Error\nmalloc failed\n");
+			free(line);
+			return (NULL);
+		}
+		(*count)++;
+		free(line);
+		line = get_next_line(fd);
+	}
+	return (tmp);
+}
+
+int	parse_map(t_map *map, int fd)
+{
 	char	**tmp;
+	int		count;
 
 	tmp = NULL;
 	count = 0;
@@ -93,36 +117,9 @@ int	parse_map(t_map *map, int fd)
 		free(map->first_line);
 		map->first_line = NULL;
 	}
-	line = get_next_line(fd);
-	while (line)
-	{
-		if (line[0] == '\n' && count == 0)
-		{
-			free(line);
-			line = get_next_line(fd);
-			continue ;
-		}
-		tmp = add_line(tmp, line, count);
-		if (!tmp)
-		{
-			printf("Error\nmalloc failed\n");
-			return (0);
-		}
-		count++;
-		free(line);
-		line = get_next_line(fd);
-	}
+	tmp = read_map_loop(tmp, &count, fd);
+	if (!tmp)
+		return (0);
 	map->map = tmp;
 	return (valide_map(map));
-}
-
-int	valide_map(t_map *map)
-{
-	if (!check_char(map))
-		return (0);
-	if (!check_player(map))
-		return (0);
-	if (!check_closed(map))
-		return (0);
-	return (1);
 }

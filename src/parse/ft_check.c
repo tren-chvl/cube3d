@@ -6,11 +6,22 @@
 /*   By: marcheva <marcheva@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/03 16:08:22 by marcheva          #+#    #+#             */
-/*   Updated: 2026/02/03 16:21:38 by marcheva         ###   ########.fr       */
+/*   Updated: 2026/02/09 02:30:33 by marcheva         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "cub3d.h"
+
+int	valide_map(t_map *map)
+{
+	if (!check_char(map))
+		return (0);
+	if (!check_player(map))
+		return (0);
+	if (!check_closed(map))
+		return (0);
+	return (1);
+}
 
 int	check_char(t_map *map)
 {
@@ -64,9 +75,33 @@ int	check_player(t_map *map)
 		i++;
 	}
 	if (count != 1)
+		return (printf("Errror\nInvalid number of player\n"), 0);
+	return (1);
+}
+
+int	check_all_cells(char **dup, int h, int w)
+{
+	t_vi	t;
+
+	t.i = 0;
+	while (t.i < h)
 	{
-		printf("Errror\nInvalid number of player\n");
-		return (0);
+		t.j = 0;
+		while (t.j < w)
+		{
+			if (dup[t.i][t.j] == '0' || dup[t.i][t.j] == 'N'
+				|| dup[t.i][t.j] == 'S' || dup[t.i][t.j] == 'E'
+				|| dup[t.i][t.j] == 'W')
+			{
+				if (!flood(dup, t, h, w))
+				{
+					printf("Error\nMap is not closed\n");
+					return (0);
+				}
+			}
+			t.j++;
+		}
+		t.i++;
 	}
 	return (1);
 }
@@ -76,32 +111,14 @@ int	check_closed(t_map *map)
 	char	**dup;
 	int		h;
 	int		w;
-	int		i;
-	int		j;
 
-	i = 0;
 	dup = dup_map(map, &h, &w);
 	if (!dup)
 		return (0);
-	while (i < h)
+	if (!check_all_cells(dup, h, w))
 	{
-		j = 0;
-		while (j < w)
-		{
-			if (dup[i][j] == '0' || dup[i][j] == 'N'
-				|| dup[i][j] == 'S' || dup[i][j] == 'E'
-				|| dup[i][j] == 'W')
-			{
-				if (!flood(dup, i, j, h, w))
-				{
-					free_dup(dup);
-					printf("Error\nMap is not closed\n");
-					return (0);
-				}
-			}
-			j++;
-		}
-		i++;
+		free_dup(dup);
+		return (0);
 	}
 	free_dup(dup);
 	return (1);

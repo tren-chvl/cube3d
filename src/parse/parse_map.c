@@ -6,7 +6,7 @@
 /*   By: marcheva <marcheva@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/02 13:35:32 by marcheva          #+#    #+#             */
-/*   Updated: 2026/02/03 16:11:10 by marcheva         ###   ########.fr       */
+/*   Updated: 2026/02/09 02:30:26 by marcheva         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -38,33 +38,68 @@ char	**add_line(char **old, char *line, int count)
 	return (new);
 }
 
-int	flood(char **m, int x, int y, int h, int w)
+int	flood_dirs(char **m, t_vi t, int h, int w)
 {
-	if (x < 0 || y < 0 || x >= h || y >= w)
+	t_vi	n;
+
+	n.i = t.i + 1;
+	n.j = t.j;
+	if (!flood(m, n, h, w))
 		return (0);
-	if (m[x][y] == '1')
-		return (1);
-	if (m[x][y] == ' ')
+	n.i = t.i - 1;
+	n.j = t.j;
+	if (!flood(m, n, h, w))
 		return (0);
-	if (m[x][y] == 'V')
-		return (1);
-	m[x][y] = 'V';
-	if (!flood(m, x + 1, y, h, w))
+	n.i = t.i;
+	n.j = t.j + 1;
+	if (!flood(m, n, h, w))
 		return (0);
-	if (!flood(m, x - 1, y, h, w))
-		return (0);
-	if (!flood(m, x, y + 1, h, w))
-		return (0);
-	if (!flood(m, x, y - 1, h, w))
+	n.i = t.i;
+	n.j = t.j - 1;
+	if (!flood(m, n, h, w))
 		return (0);
 	return (1);
+}
+
+int	flood(char **m, t_vi t, int h, int w)
+{
+	if (t.i < 0 || t.j < 0 || t.i >= h || t.j >= w)
+		return (0);
+	if (m[t.i][t.j] == '1')
+		return (1);
+	if (m[t.i][t.j] == ' ')
+		return (0);
+	if (m[t.i][t.j] == 'V')
+		return (1);
+	m[t.i][t.j] = 'V';
+	return (flood_dirs(m, t, h, w));
+}
+
+void	fill_dup_map(char **dup, t_map *map, int h, int w)
+{
+	int	i;
+	int	j;
+
+	i = 0;
+	while (i < h)
+	{
+		dup[i] = malloc(w + 1);
+		j = 0;
+		while (map->map[i][j])
+		{
+			dup[i][j] = map->map[i][j];
+			j++;
+		}
+		while (j < w)
+			dup[i][j++] = ' ';
+		dup[i][j] = '\0';
+		i++;
+	}
 }
 
 char	**dup_map(t_map *map, int *h, int *w)
 {
 	char	**dup;
-	int		i;
-	int		j;
 	int		len;
 
 	*h = 0;
@@ -79,20 +114,7 @@ char	**dup_map(t_map *map, int *h, int *w)
 	dup = malloc(sizeof(char *) * (*h + 1));
 	if (!dup)
 		return (NULL);
-	i = -1;
-	while (++i < *h)
-	{
-		dup[i] = malloc(*w + 1);
-		j = 0;
-		while (map->map[i][j])
-		{
-			dup[i][j] = map->map[i][j];
-			j++;
-		}
-		while (j < *w)
-			dup[i][j++] = ' ';
-		dup[i][j] = '\0';
-	}
+	fill_dup_map(dup, map, *h, *w);
 	dup[*h] = NULL;
 	return (dup);
 }

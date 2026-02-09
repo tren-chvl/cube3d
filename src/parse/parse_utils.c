@@ -6,7 +6,7 @@
 /*   By: marcheva <marcheva@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/02/02 11:24:48 by marcheva          #+#    #+#             */
-/*   Updated: 2026/02/03 16:05:15 by marcheva         ###   ########.fr       */
+/*   Updated: 2026/02/05 15:39:56 by marcheva         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,22 +22,6 @@ int	is_map_line(char *line)
 	if (line[i] == '1' )
 		return (1);
 	return (0);
-}
-
-int	is_number(char *s)
-{
-	int	i;
-
-	i = 0;
-	if (!s || !s[0])
-		return (0);
-	while (s[i])
-	{
-		if (s[i] < '0' || s[i] > '9')
-			return (0);
-		i++;
-	}
-	return (1);
 }
 
 int	parse_texture(char **dest, char *line)
@@ -60,12 +44,38 @@ int	parse_texture(char **dest, char *line)
 	return (1);
 }
 
+int	fill_and_check_rgb(t_va *t, char **split)
+{
+	t->r_str = ft_strtrim(split[0], " \t");
+	t->g_str = ft_strtrim(split[1], " \t");
+	t->b_str = ft_strtrim(split[2], " \t");
+	if (!is_number(t->r_str) || !is_number(t->g_str) || !is_number(t->b_str))
+	{
+		printf("Error\nInvalid color\n");
+		free(t->r_str);
+		free(t->g_str);
+		free(t->b_str);
+		return (0);
+	}
+	t->r = ft_atoi(t->r_str);
+	t->g = ft_atoi(t->g_str);
+	t->b = ft_atoi(t->b_str);
+	free(t->r_str);
+	free(t->g_str);
+	free(t->b_str);
+	if (t->r < 0 || t->r > 255 || t->g < 0 || t->g > 255
+		|| t->b < 0 || t->b > 255)
+	{
+		printf("Error\ncolor out of range\n");
+		return (0);
+	}
+	return (1);
+}
+
 int	parse_color(int dest[3], char *line)
 {
 	char	**split;
-	int		r;
-	int		g;
-	int		b;
+	t_va	t;
 
 	if (dest[0] != -1)
 	{
@@ -73,25 +83,21 @@ int	parse_color(int dest[3], char *line)
 		return (0);
 	}
 	split = ft_split(line, ',');
-	if (!is_number(split[0]) || !is_number(split[1]) || !is_number(split[2]))
+	if (!split || !split[0] || !split[1] || !split[2])
 	{
 		printf("Error\nInvalid color\n");
 		free_split(split);
 		return (0);
 	}
-	r = ft_atoi(split[0]);
-	g = ft_atoi(split[1]);
-	b = ft_atoi(split[2]);
-	if (r < 0 || r > 255 || g < 0 || g > 255 || b < 0 || b > 255)
+	if (!fill_and_check_rgb(&t, split))
 	{
-		printf("Error\ncolor out of range\n");
 		free_split(split);
 		return (0);
 	}
-	dest[0] = r;
-	dest[1] = g;
-	dest[2] = b;
 	free_split(split);
+	dest[0] = t.r;
+	dest[1] = t.g;
+	dest[2] = t.b;
 	return (1);
 }
 
